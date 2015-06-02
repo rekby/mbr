@@ -1,0 +1,16 @@
+<component name="libraryTable">
+  <library name="GOPATH &lt;parttable&gt;">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/../web-stub/src/golang.org" />
+      <root url="file://$PROJECT_DIR$/../web-stub/src/github.com" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+    <excluded>
+      <root url="file://$PROJECT_DIR$" />
+      <root url="file://$PROJECT_DIR$/../web-stub/src/golang.org/x/net/html/charset/testdata" />
+      <root url="file://$PROJECT_DIR$/../web-stub/src/golang.org/x/net/html/testdata" />
+      <root url="file://$PROJECT_DIR$/../web-stub/src/golang.org/x/net/.git" />
+    </excluded>
+  </library>
+</component>
