@@ -139,6 +139,21 @@ func (this *MBRPartition) GetLBALen() uint32 {
 }
 
 /*
+Return number of last setor if partition.
+
+If last sector num more then max uint32 - panic. It mean error in metadata.
+ */
+func (this *MBRPartition) GetLBALast() uint32 {
+    last := uint64(this.GetLBAStart()) + uint64(this.GetLBALen())-1
+
+    // If last > max uint32 - panic
+    if last > uint64(0xFFFFFFFF) {
+        panic(errors.New("Overflow while calc last sector. Max sector number in mbr must be less or equal 0xFFFFFFFF"))
+    }
+    return uint32(last)
+}
+
+/*
 Return true if partition have empty type
 */
 func (this *MBRPartition) IsEmpty() bool {
