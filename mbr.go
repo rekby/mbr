@@ -18,6 +18,14 @@ type MBRPartition struct {
 	bytes []byte
 }
 
+type PartitionType byte
+
+const (
+	PART_EMPTY = PartitionType(0)
+	PART_HYBRID_GPT = PartitionType(0xED)
+	PART_GPT = PartitionType(0xEE)
+)
+
 const mbrFirstPartEntryOffset = 446 // bytes
 const mbrPartEntrySize = 16         // bytes
 const mbrSize = 512                 // bytes
@@ -28,7 +36,6 @@ const partitionTypeOffset = 4       // bytes
 const partitionLBAStartOffset = 8   // bytes
 const partitionLBALengthOffset = 12 // bytes
 
-const partitionEmptyType = 0
 const partitionNumFirst = 1
 const partitionNumLast = 4
 const partitionBootableValue = 0x80
@@ -124,6 +131,23 @@ func (this MBR) GetPartition(num int) *MBRPartition {
 	return part
 }
 
+func (this MBR) GetAllPartitions() []*MBRPartition{
+	res := make([]*MBRPartition, 4)
+	for i := 0; i < 4; i++ {
+		res[i] = this.GetPartition(i)
+	}
+	return res
+}
+
+func (this MBR) IsGPT()bool {
+	for _, part := range this.GetAllPartitions(){
+		if part.GetType() == PART_GPT || part.GetType() == PART_HYBRID_GPT {
+			return true
+		}
+	}
+	return false
+}
+
 /*
 Return number of first sector of partition. Numbers starts from 1.
 */
@@ -153,11 +177,15 @@ func (this *MBRPartition) GetLBALast() uint32 {
     return uint32(last)
 }
 
+func (this *MBRPartition) GetType()PartitionType {
+	return PartitionType(this.bytes[partitionTypeOffset])
+}
+
 /*
 Return true if partition have empty type
 */
 func (this *MBRPartition) IsEmpty() bool {
-	return this.bytes[partitionTypeOffset] == partitionEmptyType
+	return this.GetType() == PART_EMPTY
 }
 
 /*
