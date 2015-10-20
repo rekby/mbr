@@ -22,6 +22,7 @@ type PartitionType byte
 
 const (
 	PART_EMPTY = PartitionType(0)
+	PART_LVM = PartitionType(0x8E)
 	PART_HYBRID_GPT = PartitionType(0xED)
 	PART_GPT = PartitionType(0xEE)
 )
@@ -179,6 +180,9 @@ func (this *MBRPartition) GetLBALast() uint32 {
 
 func (this *MBRPartition) GetType()PartitionType {
 	return PartitionType(this.bytes[partitionTypeOffset])
+}
+func (this *MBRPartition) SetType(t PartitionType){
+	this.bytes[partitionTypeOffset] = byte(t)
 }
 
 /*
