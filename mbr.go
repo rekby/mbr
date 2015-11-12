@@ -21,10 +21,10 @@ type MBRPartition struct {
 type PartitionType byte
 
 const (
-	PART_EMPTY = PartitionType(0)
-	PART_LVM = PartitionType(0x8E)
+	PART_EMPTY      = PartitionType(0)
+	PART_LVM        = PartitionType(0x8E)
 	PART_HYBRID_GPT = PartitionType(0xED)
-	PART_GPT = PartitionType(0xEE)
+	PART_GPT        = PartitionType(0xEE)
 )
 
 const mbrFirstPartEntryOffset = 446 // bytes
@@ -132,16 +132,16 @@ func (this MBR) GetPartition(num int) *MBRPartition {
 	return part
 }
 
-func (this MBR) GetAllPartitions() []*MBRPartition{
+func (this MBR) GetAllPartitions() []*MBRPartition {
 	res := make([]*MBRPartition, 4)
 	for i := 0; i < 4; i++ {
-		res[i] = this.GetPartition(i)
+		res[i] = this.GetPartition(i + 1)
 	}
 	return res
 }
 
-func (this MBR) IsGPT()bool {
-	for _, part := range this.GetAllPartitions(){
+func (this MBR) IsGPT() bool {
+	for _, part := range this.GetAllPartitions() {
 		if part.GetType() == PART_GPT || part.GetType() == PART_HYBRID_GPT {
 			return true
 		}
@@ -167,21 +167,21 @@ func (this *MBRPartition) GetLBALen() uint32 {
 Return number of last setor if partition.
 
 If last sector num more then max uint32 - panic. It mean error in metadata.
- */
+*/
 func (this *MBRPartition) GetLBALast() uint32 {
-    last := uint64(this.GetLBAStart()) + uint64(this.GetLBALen())-1
+	last := uint64(this.GetLBAStart()) + uint64(this.GetLBALen()) - 1
 
-    // If last > max uint32 - panic
-    if last > uint64(0xFFFFFFFF) {
-        panic(errors.New("Overflow while calc last sector. Max sector number in mbr must be less or equal 0xFFFFFFFF"))
-    }
-    return uint32(last)
+	// If last > max uint32 - panic
+	if last > uint64(0xFFFFFFFF) {
+		panic(errors.New("Overflow while calc last sector. Max sector number in mbr must be less or equal 0xFFFFFFFF"))
+	}
+	return uint32(last)
 }
 
-func (this *MBRPartition) GetType()PartitionType {
+func (this *MBRPartition) GetType() PartitionType {
 	return PartitionType(this.bytes[partitionTypeOffset])
 }
-func (this *MBRPartition) SetType(t PartitionType){
+func (this *MBRPartition) SetType(t PartitionType) {
 	this.bytes[partitionTypeOffset] = byte(t)
 }
 
