@@ -15,6 +15,7 @@ type MBR struct {
 }
 
 type MBRPartition struct {
+	Num int
 	bytes []byte
 }
 
@@ -127,7 +128,7 @@ func (this MBR) GetPartition(num int) *MBRPartition {
 		return nil
 	}
 
-	var part *MBRPartition = &MBRPartition{}
+	var part *MBRPartition = &MBRPartition{Num:num}
 	partStart := mbrFirstPartEntryOffset + (num-1)*mbrPartEntrySize
 	part.bytes = this.bytes[partStart : partStart+mbrPartEntrySize]
 	return part
