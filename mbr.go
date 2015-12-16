@@ -21,10 +21,11 @@ type MBRPartition struct {
 type PartitionType byte
 
 const (
-	PART_EMPTY      = PartitionType(0)
-	PART_LVM        = PartitionType(0x8E)
-	PART_HYBRID_GPT = PartitionType(0xED)
-	PART_GPT        = PartitionType(0xEE)
+	PART_EMPTY              = PartitionType(0)
+	PART_LINUX_SWAP_SOLARIS = PartitionType(0x82)
+	PART_LVM                = PartitionType(0x8E)
+	PART_HYBRID_GPT         = PartitionType(0xED)
+	PART_GPT                = PartitionType(0xEE)
 )
 
 const mbrFirstPartEntryOffset = 446 // bytes
