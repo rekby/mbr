@@ -65,6 +65,9 @@ func Test_readGoodMBR(t *testing.T){
 	if mbr.GetPartition(1).GetLBALen() != 39892992 {
 		t.Errorf("LBA length in partition 1: %d", mbr.GetPartition(1).GetLBALen() )
 	}
+	if mbr.GetPartition(2).IsBootable() {
+		t.Error("partition 2 is bootable")
+	}
 	if mbr.GetPartition(2).IsEmpty() {
 		t.Error("partition 2 not empty")
 	}
