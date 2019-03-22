@@ -53,6 +53,9 @@ func Test_readGoodMBR(t *testing.T){
 	if err != nil {
 		t.Error("Can't read: " + err.Error())
 	}
+	if !mbr.GetPartition(1).IsBootable() {
+		t.Error("partition 1 not bootable")
+	}
 	if mbr.GetPartition(1).IsEmpty() {
 		t.Error("partition 1 not empty")
 	}
