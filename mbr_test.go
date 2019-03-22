@@ -60,19 +60,19 @@ func Test_readGoodMBR(t *testing.T){
 		t.Error("partition 1 not empty")
 	}
 	if mbr.GetPartition(1).GetLBAStart() != 2048 {
-		t.Errorf("LBA start in partition 1: %s", mbr.GetPartition(1).GetLBAStart() )
+		t.Errorf("LBA start in partition 1: %d", mbr.GetPartition(1).GetLBAStart() )
 	}
 	if mbr.GetPartition(1).GetLBALen() != 39892992 {
-		t.Errorf("LBA length in partition 1: %s", mbr.GetPartition(1).GetLBALen() )
+		t.Errorf("LBA length in partition 1: %d", mbr.GetPartition(1).GetLBALen() )
 	}
 	if mbr.GetPartition(2).IsEmpty() {
 		t.Error("partition 2 not empty")
 	}
 	if mbr.GetPartition(2).GetLBAStart() != 39895040 {
-		t.Errorf("LBA start in partition 2: %s", mbr.GetPartition(2).GetLBAStart() )
+		t.Errorf("LBA start in partition 2: %d", mbr.GetPartition(2).GetLBAStart() )
 	}
 	if mbr.GetPartition(2).GetLBALen() != 2048000 {
-		t.Errorf("LBA length in partition 2: %s", mbr.GetPartition(2).GetLBALen() )
+		t.Errorf("LBA length in partition 2: %d", mbr.GetPartition(2).GetLBALen() )
 	}
 	if !mbr.GetPartition(3).IsEmpty() {
 		t.Error("partition 3 empty")
@@ -124,7 +124,7 @@ func Test_fixPartitionStart(t *testing.T){
 	outBytes := out.Bytes()
 	for i := 0; i < 512; i++{
 		if need[i] != outBytes[i] {
-			t.Errorf("Bad value in byte: %s (%s != %s)", i, need[i], outBytes[i])
+			t.Errorf("Bad value in byte: %d (%d != %d)", i, need[i], outBytes[i])
 		}
 	}
 }
