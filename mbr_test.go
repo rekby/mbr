@@ -131,3 +131,43 @@ func Test_fixPartitionStart(t *testing.T){
 		}
 	}
 }
+
+func Test_MakeProtective(t *testing.T) {
+	for _, d := range []struct {
+		ssize    int
+		diskSize uint64
+		expected uint32
+		desc     string
+	}{
+		{512, 21474836480, 41943039, "20G x 512"},
+		{512, 4398046511104, 0xFFFFFFFF, "4TiB x 512"},
+		{4096, 1024209543168, 250051157, "1TB x 4k"},
+		{4096, 17592186044416, 0xFFFFFFFF, "16TiB x 4k"},
+	} {
+		buf := bytes.NewReader(mbrDump1)
+		mbr, _ := Read(buf)
+		mbr.MakeProtective(d.ssize, d.diskSize)
+		if err := mbr.Check(); err != nil {
+			t.Errorf("ProtectiveMBR failed check: %s", err)
+		}
+
+		pt := mbr.GetPartition(1)
+		if pt.GetType() != PART_GPT {
+			t.Errorf("%s Partition 1 had type != PART_GPT", d.desc)
+		}
+
+		if found := pt.GetLBAStart(); found != 1 {
+			t.Errorf("%s Partition 1 start at %d expected 1", d.desc, found)
+		}
+
+		if found := pt.GetLBALen(); found != d.expected {
+			t.Errorf("%s Partition 1 had len %d, expected %d", d.desc, found, d.expected)
+		}
+		for n := 2; n <= 4; n++ {
+			if mbr.GetPartition(n).GetType() != PART_EMPTY {
+				t.Errorf("Partition %d was not empty", n)
+			}
+		}
+	}
+
+}

@@ -70,6 +70,7 @@ func (this *MBR) Check() error {
 	}
 
 	// Check partitions
+	maxLen := uint64(0xFFFFFFFF)
 	for l := partitionNumFirst; l <= partitionNumLast; l++ {
 		lp := this.GetPartition(l)
 		if lp.IsEmpty() {
@@ -77,8 +78,13 @@ func (this *MBR) Check() error {
 		}
 
 		// Check if partition last sector out of uint32 bounds
-		if uint64(lp.GetLBAStart())+uint64(lp.GetLBALen()) > uint64(0xFFFFFFFF) {
-			return ErrorPartitionLastSectorHigh
+		last := uint64(lp.GetLBAStart()) + uint64(lp.GetLBALen())
+		if last > maxLen {
+			// Most/All GPT partitioners write a length for the Protective MBR of maxLen
+			// even though it is strictly out of bounds. Specifically allow for that.
+			if !(l == partitionNumFirst && last == maxLen+1 && lp.GetType() == PART_GPT) {
+				return ErrorPartitionLastSectorHigh
+			}
 		}
 
 		// Check partition bootable status
@@ -149,6 +155,34 @@ func (this MBR) IsGPT() bool {
 		}
 	}
 	return false
+}
+
+// MakeProtective - Make this MBR a GPT Protective MBR
+//   sectorSize is either 512 or 4096. diskSize is the size of entire disk in bytes.
+//   https://en.wikipedia.org/wiki/GUID_Partition_Table#Protective_MBR_(LBA_0)
+func (this *MBR) MakeProtective(sectorSize int, diskSize uint64) {
+
+	this.FixSignature()
+
+	// create one partition that spans the whole addressable disk.
+	ptLenLBA := uint32(0xFFFFFFFF)
+	if diskSize/uint64(sectorSize) <= uint64(0xFFFFFFFF) {
+		ptLenLBA = uint32(diskSize/uint64(sectorSize)) - 1
+	}
+	pt := this.GetPartition(1)
+	pt.SetType(PART_GPT)
+	pt.SetLBAStart(1)
+	pt.SetLBALen(ptLenLBA)
+
+	// zero the other partitions.
+	for pnum := 2; pnum <= 4; pnum++ {
+		pt := this.GetPartition(pnum)
+		pt.SetType(PART_EMPTY)
+		pt.SetLBAStart(0)
+		pt.SetLBALen(0)
+	}
+
+	return
 }
 
 /*
