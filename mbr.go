@@ -9,6 +9,7 @@ var ErrorBadMbrSign = errors.New("MBR: Bad signature")
 var ErrorPartitionsIntersection = errors.New("MBR: Partitions have intersections")
 var ErrorPartitionLastSectorHigh = errors.New("MBR: Last sector have very high number")
 var ErrorPartitionBootFlag = errors.New("MBR: Bad value in boot flag")
+var ErrorDiskSizeNotEvenSectors = errors.New("MBR: Disk size is not evenly divisible by sector size")
 
 type MBR struct {
 	bytes []byte
@@ -160,8 +161,11 @@ func (this MBR) IsGPT() bool {
 // MakeProtective - Make this MBR a GPT Protective MBR
 //   sectorSize is either 512 or 4096. diskSize is the size of entire disk in bytes.
 //   https://en.wikipedia.org/wiki/GUID_Partition_Table#Protective_MBR_(LBA_0)
-func (this *MBR) MakeProtective(sectorSize int, diskSize uint64) {
+func (this *MBR) MakeProtective(sectorSize int, diskSize uint64) error {
 
+	if diskSize%uint64(sectorSize) != 0 {
+		return ErrorDiskSizeNotEvenSectors
+	}
 	this.FixSignature()
 
 	// create one partition that spans the whole addressable disk.
@@ -182,7 +186,7 @@ func (this *MBR) MakeProtective(sectorSize int, diskSize uint64) {
 		pt.SetLBALen(0)
 	}
 
-	return
+	return nil
 }
 
 /*
