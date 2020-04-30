@@ -177,6 +177,7 @@ func (this *MBR) MakeProtective(sectorSize int, diskSize uint64) error {
 	pt.SetType(PART_GPT)
 	pt.SetLBAStart(1)
 	pt.SetLBALen(ptLenLBA)
+	pt.bytes[partitionBootableOffset] = partitionNonBootableValue
 
 	// zero the other partitions.
 	for pnum := 2; pnum <= 4; pnum++ {
@@ -184,6 +185,7 @@ func (this *MBR) MakeProtective(sectorSize int, diskSize uint64) error {
 		pt.SetType(PART_EMPTY)
 		pt.SetLBAStart(0)
 		pt.SetLBALen(0)
+		pt.bytes[partitionBootableOffset] = partitionNonBootableValue
 	}
 
 	return nil
