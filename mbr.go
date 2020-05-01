@@ -10,6 +10,7 @@ var ErrorPartitionsIntersection = errors.New("MBR: Partitions have intersections
 var ErrorPartitionLastSectorHigh = errors.New("MBR: Last sector have very high number")
 var ErrorPartitionBootFlag = errors.New("MBR: Bad value in boot flag")
 var ErrorDiskSizeNotEvenSectors = errors.New("MBR: Disk size is not evenly divisible by sector size")
+var ErrorInvalidProtectiveType = errors.New("Invalid value for ProtectiveType")
 
 type MBR struct {
 	bytes []byte
@@ -28,6 +29,14 @@ const (
 	PART_LVM                = PartitionType(0x8E)
 	PART_HYBRID_GPT         = PartitionType(0xED)
 	PART_GPT                = PartitionType(0xEE)
+)
+
+type ProtectiveType int
+
+const (
+	DiskSize          = ProtectiveType(1)
+	MaxSize           = ProtectiveType(2)
+	DefaultProtective = ProtectiveType(0)
 )
 
 const mbrFirstPartEntryOffset = 446 // bytes
@@ -161,22 +170,39 @@ func (this MBR) IsGPT() bool {
 // MakeProtective - Make this MBR a GPT Protective MBR
 //   sectorSize is either 512 or 4096. diskSize is the size of entire disk in bytes.
 //   https://en.wikipedia.org/wiki/GUID_Partition_Table#Protective_MBR_(LBA_0)
-func (this *MBR) MakeProtective(sectorSize int, diskSize uint64) error {
+//
+//  ProtectiveType value determines how the size of the partition is set.
+//    DefaultProtective - implementation default value
+//    MaxSize - Size of the ProtectiveMBR partition will be set to 0xFFFFFFFF
+//        While this is strictly outside the UEFI spec, it is the behavior
+//        of linux and windows partitioners.
+//    DiskSize - the actual length of the partition size size up to 0xFFFFFFFF - 1
+func (this *MBR) MakeProtective(sectorSize int, diskSize uint64, pType ProtectiveType) error {
 
 	if diskSize%uint64(sectorSize) != 0 {
 		return ErrorDiskSizeNotEvenSectors
 	}
 	this.FixSignature()
 
-	// create one partition that spans the whole addressable disk.
-	ptLenLBA := uint32(0xFFFFFFFF)
-	if diskSize/uint64(sectorSize) <= uint64(0xFFFFFFFF) {
-		ptLenLBA = uint32(diskSize/uint64(sectorSize)) - 1
+	ptLBAStart := uint32(1)
+	ptLBALen := uint32(0xFFFFFFFF)
+
+	if pType == DiskSize {
+		max := uint64(0xFFFFFFFF)
+		actual := diskSize/uint64(sectorSize) - uint64(ptLBAStart)
+		if actual > max {
+			ptLBALen = uint32(max)
+		} else {
+			ptLBALen = uint32(actual)
+		}
+	} else if pType != MaxSize && pType != DefaultProtective {
+		return ErrorInvalidProtectiveType
 	}
+
 	pt := this.GetPartition(1)
 	pt.SetType(PART_GPT)
-	pt.SetLBAStart(1)
-	pt.SetLBALen(ptLenLBA)
+	pt.SetLBAStart(ptLBAStart)
+	pt.SetLBALen(ptLBALen)
 	pt.bytes[partitionBootableOffset] = partitionNonBootableValue
 
 	// zero the other partitions.
