@@ -209,6 +209,17 @@ func (this *MBRPartition) SetLBALen(sectorCount uint32) {
 }
 
 /*
+Set the Bootable flag on this partition.
+*/
+func (this *MBRPartition) SetBootable(bootable bool) {
+	if bootable {
+		this.bytes[partitionBootableOffset] = partitionBootableValue
+	} else {
+		this.bytes[partitionBootableOffset] = partitionNonBootableValue
+	}
+}
+
+/*
 Return true if this partition's bootable flag is set.
 */
 func (this *MBRPartition) IsBootable() bool {
