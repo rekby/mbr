@@ -1,8 +1,9 @@
 package mbr
 
 import (
-	"testing"
 	"bytes"
+	"fmt"
+	"testing"
 )
 
 /*
@@ -130,4 +131,56 @@ func Test_fixPartitionStart(t *testing.T){
 			t.Errorf("Bad value in byte: %d (%d != %d)", i, need[i], outBytes[i])
 		}
 	}
+}
+
+func Test_MakeProtective(t *testing.T) {
+	ptMap := map[ProtectiveType]string{
+		DiskSize:          "DiskSize",
+		DefaultProtective: "Default",
+		MaxSize:           "MaxSize",
+	}
+	for _, d := range []struct {
+		ssize    int
+		diskSize uint64
+		expected uint32
+		desc     string
+	}{
+		{512, 21474836480, 41943039, "20G x 512"},
+		{512, 4398046511104, 0xFFFFFFFF, "4TiB x 512"},
+		{4096, 1024209543168, 250051157, "1TB x 4k"},
+		{4096, 17592186044416, 0xFFFFFFFF, "16TiB x 4k"},
+	} {
+
+		checkMbr := func(exp uint32, pType ProtectiveType) {
+			desc := fmt.Sprintf("%s [%s]", d.desc, ptMap[pType])
+			buf := bytes.NewReader(mbrDump1)
+			mbr, _ := Read(buf)
+			mbr.MakeProtective(d.ssize, d.diskSize, pType)
+			if err := mbr.Check(); err != nil {
+				t.Errorf("ProtectiveMBR failed check: %s", err)
+			}
+
+			pt := mbr.GetPartition(1)
+			if pt.GetType() != PART_GPT {
+				t.Errorf("%s Partition 1 had type != PART_GPT", desc)
+			}
+
+			if found := pt.GetLBAStart(); found != 1 {
+				t.Errorf("%s Partition 1 start at %d expected 1", desc, found)
+			}
+
+			if found := pt.GetLBALen(); found != exp {
+				t.Errorf("%s Partition 1 had len %d, expected %d", desc, found, exp)
+			}
+			for n := 2; n <= 4; n++ {
+				if mbr.GetPartition(n).GetType() != PART_EMPTY {
+					t.Errorf("Partition %d was not empty", n)
+				}
+			}
+		}
+
+		checkMbr(0xFFFFFFFF, MaxSize)
+		checkMbr(d.expected, DiskSize)
+	}
+
 }
